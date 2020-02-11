@@ -9,6 +9,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Get subrepositories
+      run: "git submodule update --init --recursive"
     - name: Move plugin into src folder
       run: "cd $GITHUB_WORKSPACE && mkdir src && mv rviz_polygon_filled src"
     - name: Setup catkin
