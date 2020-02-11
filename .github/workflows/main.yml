@@ -9,10 +9,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Move plugin into src folder
+      run: "cd $GITHUB_WORKSPACE && mkdir src && mv rviz_polygon_filled src"
     - name: Setup catkin
       uses: betwo/github-setup-catkin@v1.0.0
       with:
         ros-version: 'melodic'
         workspace: '$GITHUB_WORKSPACE'
-    - run: "mkdir src && mv rviz_polygon_filled src"
-    - run: catkin_make_isolated 
+    - name: Build workspace
+      run: catkin_make_isolated
