@@ -1,3 +1,3 @@
 [submodule "poly2tri"]
-	path = poly2tri
+	path = rviz_polygon_filled/poly2tri
 	url = https://github.com/zolnierczyk/poly2tri
