@@ -1,0 +1,28 @@
+<?xml version="0.2"?>
+<package format="2">
+  <name>rviz_polygon_filled</name>
+  <version>0.1.0</version>
+  <description>
+     Rviz plugin which draw filled polygon as triangle strip.
+  </description>
+  <maintainer email="zolnierczyk@gmail.org">Piotr Zolnierczyk</maintainer>
+  <license>MIT</license>
+
+  <url></url>
+  <author>Piotr Zolnierczyk</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>qtbase5-dev</build_depend>
+  <build_depend>rviz</build_depend>
+
+  <exec_depend>libqt5-core</exec_depend>
+  <exec_depend>libqt5-gui</exec_depend>
+  <exec_depend>libqt5-widgets</exec_depend>
+  <exec_depend>rviz</exec_depend>
+
+  <export>
+      <rosdoc config="${prefix}/rosdoc.yaml"/>
+      <rviz plugin="${prefix}/plugin_description.xml"/>
+  </export>
+</package>
