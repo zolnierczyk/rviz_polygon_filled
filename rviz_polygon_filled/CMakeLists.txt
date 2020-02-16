@@ -130,7 +130,7 @@ endif()
 add_definitions(-DQT_NO_KEYWORDS)
 
 ## Adding poly2tri library which do hard job of triangulation
-add_subdirectory(lib/poly2tri)
+add_subdirectory(poly2tri)
 
 ###########
 ## Build ##
