@@ -1,104 +1,103 @@
-/*
- * Copyright (c) 2012, Willow Garage, Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Willow Garage, Inc. nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
+#include <OgreSceneNode.h>
+#include <OgreSceneManager.h>
+#include <OgreManualObject.h>
+#include <OgreBillboardSet.h>
 
-#include <OGRE/OgreVector3.h>
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
-
-#include <rviz/ogre_helpers/arrow.h>
+#include "rviz/display_context.h"
+#include "rviz/frame_manager.h"
+#include "rviz/properties/color_property.h"
+#include "rviz/properties/float_property.h"
+#include "rviz/properties/parse_color.h"
+#include "rviz/validate_floats.h"
 
 #include "poly_fill.h"
 
-namespace rviz_plugin_tutorials
+namespace rviz_polygon_filled
 {
 
-// BEGIN_TUTORIAL
-ImuVisual::ImuVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node )
+PolygonFilledDisplay::PolygonFilledDisplay()
 {
-  scene_manager_ = scene_manager;
-
-  // Ogre::SceneNode s form a tree, with each node storing the
-  // transform (position and orientation) of itself relative to its
-  // parent.  Ogre does the math of combining those transforms when it
-  // is time to render.
-  //
-  // Here we create a node to store the pose of the Imu's header frame
-  // relative to the RViz fixed frame.
-  frame_node_ = parent_node->createChildSceneNode();
-
-  // We create the arrow object within the frame node so that we can
-  // set its position and direction relative to its header frame.
-  acceleration_arrow_.reset(new rviz::Arrow( scene_manager_, frame_node_ ));
+  color_property_ = new rviz::ColorProperty( "Color", QColor( 25, 255, 0 ),
+                                       "Color to draw the polygon.", this, SLOT( queueRender() ));
+  alpha_property_ = new rviz::FloatProperty( "Alpha", 1.0,
+                                       "Amount of transparency to apply to the polygon.", this, SLOT( queueRender() ));
+  alpha_property_->setMin( 0 );
+  alpha_property_->setMax( 1 );
 }
 
-ImuVisual::~ImuVisual()
+PolygonFilledDisplay::~PolygonFilledDisplay()
 {
-  // Destroy the frame node since we don't need it anymore.
-  scene_manager_->destroySceneNode( frame_node_ );
+  if ( initialized() )
+  {
+    scene_manager_->destroyManualObject( manual_object_ );
+  }
 }
 
-void ImuVisual::setMessage( const sensor_msgs::Imu::ConstPtr& msg )
+void PolygonFilledDisplay::onInitialize()
 {
-  const geometry_msgs::Vector3& a = msg->linear_acceleration;
+  MFDClass::onInitialize();
 
-  // Convert the geometry_msgs::Vector3 to an Ogre::Vector3.
-  Ogre::Vector3 acc( a.x, a.y, a.z );
-
-  // Find the magnitude of the acceleration vector.
-  float length = acc.length();
-
-  // Scale the arrow's thickness in each dimension along with its length.
-  Ogre::Vector3 scale( length, length, length );
-  acceleration_arrow_->setScale( scale );
-
-  // Set the orientation of the arrow to match the direction of the
-  // acceleration vector.
-  acceleration_arrow_->setDirection( acc );
+  manual_object_ = scene_manager_->createManualObject();
+  manual_object_->setDynamic( true );
+  scene_node_->attachObject( manual_object_ );
 }
 
-// Position and orientation are passed through to the SceneNode.
-void ImuVisual::setFramePosition( const Ogre::Vector3& position )
+void PolygonFilledDisplay::reset()
 {
-  frame_node_->setPosition( position );
+  MFDClass::reset();
+  manual_object_->clear();
 }
 
-void ImuVisual::setFrameOrientation( const Ogre::Quaternion& orientation )
+bool validateFloats( const geometry_msgs::PolygonStamped& msg )
 {
-  frame_node_->setOrientation( orientation );
+  return rviz::validateFloats(msg.polygon.points);
 }
 
-// Color is passed through to the Arrow object.
-void ImuVisual::setColor( float r, float g, float b, float a )
+void PolygonFilledDisplay::processMessage(const geometry_msgs::PolygonStamped::ConstPtr& msg)
 {
-  acceleration_arrow_->setColor( r, g, b, a );
+  if( !validateFloats( *msg ))
+  {
+    setStatus( rviz::StatusProperty::Error, "Topic", "Message contained invalid floating point values (nans or infs)" );
+    return;
+  }
+
+  Ogre::Vector3 position;
+  Ogre::Quaternion orientation;
+  if( !context_->getFrameManager()->getTransform( msg->header, position, orientation ))
+  {
+    ROS_DEBUG( "Error transforming from frame '%s' to frame '%s'",
+               msg->header.frame_id.c_str(), qPrintable( fixed_frame_ ));
+  }
+
+  scene_node_->setPosition( position );
+  scene_node_->setOrientation( orientation );
+
+  manual_object_->clear();
+
+  Ogre::ColourValue color = rviz::qtToOgre( color_property_->getColor() );
+  color.a = alpha_property_->getFloat();
+  // TODO: this does not actually support alpha as-is.  The
+  // "BaseWhiteNoLighting" material ends up ignoring the alpha
+  // component of the color values we set at each point.  Need to make
+  // a material and do the whole setSceneBlending() rigamarole.
+
+  uint32_t num_points = msg->polygon.points.size();
+  if( num_points > 0 )
+  {
+    manual_object_->estimateVertexCount( num_points );
+    manual_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP );
+    for( uint32_t i=0; i < num_points + 1; ++i )
+    {
+      const geometry_msgs::Point32& msg_point = msg->polygon.points[ i % num_points ];
+      manual_object_->position( msg_point.x, msg_point.y, msg_point.z );
+      manual_object_->colour( color );
+    }
+
+    manual_object_->end();
+  }
 }
-// END_TUTORIAL
 
-} // end namespace rviz_plugin_tutorials
+} // namespace rviz
 
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS( rviz_polygon_filled::PolygonFilledDisplay, rviz::Display )

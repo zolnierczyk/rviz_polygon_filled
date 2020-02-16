@@ -27,71 +27,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef IMU_VISUAL_H
-#define IMU_VISUAL_H
+#ifndef POLYGON_FILLED_DISPLAY_H
+#define POLYGON_FILLED_DISPLAY_H
 
-#include <sensor_msgs/Imu.h>
+#include <geometry_msgs/PolygonStamped.h>
+#include "rviz/message_filter_display.h"
 
+// Forward declaration to reduce compile time
 namespace Ogre
 {
-class Vector3;
-class Quaternion;
+class ManualObject;
 }
 
 namespace rviz
 {
-class Arrow;
+class ColorProperty;
+class FloatProperty;
 }
 
-namespace rviz_plugin_tutorials
+
+namespace rviz_polygon_filled
 {
 
-// BEGIN_TUTORIAL
-// Declare the visual class for this display.
-//
-// Each instance of ImuVisual represents the visualization of a single
-// sensor_msgs::Imu message.  Currently it just shows an arrow with
-// the direction and magnitude of the acceleration vector, but could
-// easily be expanded to include more of the message data.
-class ImuVisual
+class PolygonFilledDisplay: public rviz::MessageFilterDisplay<geometry_msgs::PolygonStamped>
 {
+Q_OBJECT
 public:
-  // Constructor.  Creates the visual stuff and puts it into the
-  // scene, but in an unconfigured state.
-  ImuVisual( Ogre::SceneManager* scene_manager, Ogre::SceneNode* parent_node );
+  PolygonFilledDisplay();
+  virtual ~PolygonFilledDisplay() override;
+  virtual void onInitialize() override;
+  virtual void reset() override;
 
-  // Destructor.  Removes the visual stuff from the scene.
-  virtual ~ImuVisual();
+protected:
+  virtual void processMessage( const geometry_msgs::PolygonStamped::ConstPtr& msg ) override;
 
-  // Configure the visual to show the data in the message.
-  void setMessage( const sensor_msgs::Imu::ConstPtr& msg );
+  Ogre::ManualObject* manual_object_;
 
-  // Set the pose of the coordinate frame the message refers to.
-  // These could be done inside setMessage(), but that would require
-  // calls to FrameManager and error handling inside setMessage(),
-  // which doesn't seem as clean.  This way ImuVisual is only
-  // responsible for visualization.
-  void setFramePosition( const Ogre::Vector3& position );
-  void setFrameOrientation( const Ogre::Quaternion& orientation );
-
-  // Set the color and alpha of the visual, which are user-editable
-  // parameters and therefore don't come from the Imu message.
-  void setColor( float r, float g, float b, float a );
-
-private:
-  // The object implementing the actual arrow shape
-  boost::shared_ptr<rviz::Arrow> acceleration_arrow_;
-
-  // A SceneNode whose pose is set to match the coordinate frame of
-  // the Imu message header.
-  Ogre::SceneNode* frame_node_;
-
-  // The SceneManager, kept here only so the destructor can ask it to
-  // destroy the ``frame_node_``.
-  Ogre::SceneManager* scene_manager_;
+  rviz::ColorProperty* color_property_;
+  rviz::FloatProperty* alpha_property_;
 };
-// END_TUTORIAL
 
-} // end namespace rviz_plugin_tutorials
-
-#endif // IMU_VISUAL_H
+}
+#endif // POLYGON_FILLED_DISPLAY_H
