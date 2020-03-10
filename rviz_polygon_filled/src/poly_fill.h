@@ -60,11 +60,19 @@ public:
 
 protected:
   virtual void processMessage( const geometry_msgs::PolygonStamped::ConstPtr& msg ) override;
+  void drawPolygonBorder(const geometry_msgs::PolygonStamped::ConstPtr& msg);
 
   Ogre::ManualObject* manual_object_;
 
-  rviz::ColorProperty* color_property_;
-  rviz::FloatProperty* alpha_property_;
+  rviz::BoolProperty* draw_fill_;
+  rviz::BoolProperty* draw_back_;
+  rviz::ColorProperty* color_fill_;
+
+  rviz::BoolProperty* draw_border_;
+  rviz::ColorProperty* color_border_;
+
+  rviz::BoolProperty* draw_mesh_;
+  rviz::ColorProperty* color_mesh_;
 };
 
 }

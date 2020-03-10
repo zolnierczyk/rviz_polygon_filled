@@ -12,17 +12,25 @@
 
 #include "poly_fill.h"
 
+#include "poly2tri/poly2tri.h"
+
 namespace rviz_polygon_filled
 {
 
 PolygonFilledDisplay::PolygonFilledDisplay()
 {
-  color_property_ = new rviz::ColorProperty( "Color", QColor( 25, 255, 0 ),
-                                       "Color to draw the polygon.", this, SLOT( queueRender() ));
-  alpha_property_ = new rviz::FloatProperty( "Alpha", 1.0,
-                                       "Amount of transparency to apply to the polygon.", this, SLOT( queueRender() ));
-  alpha_property_->setMin( 0 );
-  alpha_property_->setMax( 1 );
+  draw_fill_ = new rviz::BoolProperty("Fill",false, "Fill with color", this, SLOT( queueRender() ));
+  draw_back_ = new rviz::BoolProperty("Backface",false, "Draw backface of polygon", this, SLOT( queueRender() ));
+  color_fill_ = new rviz::ColorProperty( "Fill color", QColor( 25, 255, 0 ),
+                                       "Color to fill the polygon.", this, SLOT( queueRender() ));
+
+  draw_border_ = new rviz::BoolProperty("Border",false, "Draw border of polygon", this, SLOT( queueRender() ));
+  color_border_ = new rviz::ColorProperty( "Border Color", QColor( 25, 255, 0 ),
+                                       "Color to draw border of the polygon.", this, SLOT( queueRender() ));
+
+  draw_mesh_ = new rviz::BoolProperty("Mesh",false, "Draw mesh of polygon", this, SLOT( queueRender() ));
+  color_mesh_ = new rviz::ColorProperty( "Mesh Color", QColor( 25, 255, 0 ),
+                                         "Color to draw mesh of the polygon.", this, SLOT( queueRender() ));
 }
 
 PolygonFilledDisplay::~PolygonFilledDisplay()
@@ -61,6 +69,17 @@ void PolygonFilledDisplay::processMessage(const geometry_msgs::PolygonStamped::C
     return;
   }
 
+  std::vector<p2t::Point*> polyline;
+  for (const auto &point : msg->polygon.points)
+  {
+    polyline.push_back(new p2t::Point(point.x, point.y));
+  }
+
+  p2t::CDT cdt{ polyline };
+
+  cdt.Triangulate();
+  const auto result = cdt.GetTriangles();
+
   Ogre::Vector3 position;
   Ogre::Quaternion orientation;
   if( !context_->getFrameManager()->getTransform( msg->header, position, orientation ))
@@ -74,27 +93,78 @@ void PolygonFilledDisplay::processMessage(const geometry_msgs::PolygonStamped::C
 
   manual_object_->clear();
 
-  Ogre::ColourValue color = rviz::qtToOgre( color_property_->getColor() );
-  color.a = alpha_property_->getFloat();
-  // TODO: this does not actually support alpha as-is.  The
-  // "BaseWhiteNoLighting" material ends up ignoring the alpha
-  // component of the color values we set at each point.  Need to make
-  // a material and do the whole setSceneBlending() rigamarole.
+  Ogre::ColourValue colorFill = rviz::qtToOgre( color_fill_->getColor() );
+  Ogre::ColourValue colorBorder = rviz::qtToOgre( color_border_->getColor() );
+  Ogre::ColourValue colorMesh = rviz::qtToOgre( color_mesh_->getColor() );
 
-  uint32_t num_points = msg->polygon.points.size();
+
+  size_t num_points = result.size();
   if( num_points > 0 )
   {
     manual_object_->estimateVertexCount( num_points );
-    manual_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP );
-    for( uint32_t i=0; i < num_points + 1; ++i )
+
+    if (draw_fill_->getBool())
     {
-      const geometry_msgs::Point32& msg_point = msg->polygon.points[ i % num_points ];
-      manual_object_->position( msg_point.x, msg_point.y, msg_point.z );
-      manual_object_->colour( color );
+        manual_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST );
+        for( size_t i = 0 ; i < result.size() ; ++i )
+        {
+          for(int j = 0 ; j < 3 ; ++j )
+          {
+              p2t::Point* point = result[i]->GetPoint(j);
+              manual_object_->position( point->x, point->y, 0.0 );
+              manual_object_->colour( colorFill );
+          }
+
+          if (draw_back_->getBool())
+          {
+              for(int j = 2 ; j >= 0 ; --j )
+              {
+                  p2t::Point* point = result[i]->GetPoint(j);
+                  manual_object_->position( point->x, point->y, 0.0 );
+                  manual_object_->colour( colorFill );
+              }
+          }
+        }
+
+        manual_object_->end();
     }
 
-    manual_object_->end();
+
+    if (draw_border_->getBool())
+    {
+        manual_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP );
+
+        for (const auto &point : msg->polygon.points)
+        {
+          manual_object_->position( point.x, point.y, 0.0 );
+          manual_object_->colour( colorBorder );
+        }
+
+        manual_object_->position( msg->polygon.points.front().x, msg->polygon.points.front().y, 0.0 );
+        manual_object_->colour( colorBorder );
+        manual_object_->end();
+    }
+
+    if (draw_mesh_->getBool())
+    {
+        manual_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP );
+        for( size_t i = 0 ; i < result.size() ; ++i )
+        {
+          for(int j = 0 ; j < 3 ; ++j )
+          {
+              p2t::Point* point = result[i]->GetPoint(j);
+              manual_object_->position( point->x, point->y, 0.0 );
+              manual_object_->colour( colorMesh );
+          }
+        }
+        manual_object_->end();
+    }
   }
+}
+
+void PolygonFilledDisplay::drawPolygonBorder(const geometry_msgs::PolygonStamped::ConstPtr &msg)
+{
+
 }
 
 } // namespace rviz

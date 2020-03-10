@@ -169,7 +169,7 @@ add_library(${PROJECT_NAME} ${SRC_FILES})
 ## library and names the actual file something like
 ## "librviz_plugin_tutorials.so", or whatever is appropriate for your
 ## particular OS.
-target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES} poly2tri)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
