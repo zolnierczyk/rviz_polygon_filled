@@ -10,6 +10,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   rviz
   geometry_msgs
+  roslint
 )
 
 ## System dependencies are found with CMake's conventions
@@ -135,6 +136,8 @@ add_subdirectory(poly2tri)
 ###########
 ## Build ##
 ###########
+
+roslint_cpp()
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
