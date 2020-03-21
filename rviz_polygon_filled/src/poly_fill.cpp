@@ -147,14 +147,21 @@ void PolygonFilledDisplay::processMessage(const geometry_msgs::PolygonStamped::C
 
     if (draw_mesh_->getBool())
     {
-        manual_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_STRIP );
+        manual_object_->begin( "BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST );
+
+
         for( size_t i = 0 ; i < result.size() ; ++i )
         {
           for(int j = 0 ; j < 3 ; ++j )
           {
-              p2t::Point* point = result[i]->GetPoint(j);
-              manual_object_->position( point->x, point->y, 0.0 );
+              p2t::Point* pointA = result[i]->GetPoint(j);
+              manual_object_->position( pointA->x, pointA->y, 0.0 );
               manual_object_->colour( colorMesh );
+
+              p2t::Point* pointB = result[i]->GetPoint((j+1)%3);
+              manual_object_->position( pointB->x, pointB->y, 0.0 );
+              manual_object_->colour( colorMesh );
+
           }
         }
         manual_object_->end();
