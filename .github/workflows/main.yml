@@ -17,4 +17,4 @@ jobs:
     - name: Move plugin into src folder
       run: "mkdir src && mv rviz_polygon_filled src"
     - name: Build workspace
-      run: " ls /opt/ros/melodic && ls -all && pwd && catkin_make_isolated"
+      run: " ls /opt/ros/melodic && ls -all && pwd && source /opt/ros/melodic/setup.bash && catkin_make_isolated"
