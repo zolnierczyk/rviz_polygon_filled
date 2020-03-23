@@ -12,9 +12,9 @@ jobs:
       
     steps:
     - uses: actions/checkout@v2
-    - name: Get subrepositories
-      run: "ls -a && pwd && cd $GITHUB_WORKSPACE && git submodule update --init --recursive"
+      with:
+        submodule: recursive
     - name: Move plugin into src folder
-      run: "cd $GITHUB_WORKSPACE && mkdir src && mv rviz_polygon_filled src"
+      run: "mkdir src && mv rviz_polygon_filled src"
     - name: Build workspace
-      run: "source /opt/ros/melodic/setup.bash && catkin_make_isolated"
+      run: "ls -all && pwd && source /opt/ros/melodic/setup.bash && catkin_make_isolated"
