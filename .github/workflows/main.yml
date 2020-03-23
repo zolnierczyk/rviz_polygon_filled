@@ -11,9 +11,9 @@ jobs:
       image: osrf/ros:melodic-desktop-full
       
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v1
       with:
-        submodules: recursive
+        submodules: true
     - name: Move plugin into src folder
       run: "mkdir src && mv rviz_polygon_filled src"
     - name: Build workspace
