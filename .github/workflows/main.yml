@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodule: recursive
+        submodules: recursive
     - name: Move plugin into src folder
       run: "mkdir src && mv rviz_polygon_filled src"
     - name: Build workspace
