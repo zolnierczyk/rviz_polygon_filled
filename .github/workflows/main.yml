@@ -11,10 +11,10 @@ jobs:
       image: osrf/ros:melodic-desktop-full
       
     steps:
-    - uses: actions/checkout@v2
-    - name: Get subrepositories
-      run: "git submodule update --init --recursive"
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
     - name: Move plugin into src folder
-      run: "cd $GITHUB_WORKSPACE && mkdir src && mv rviz_polygon_filled src"
+      run: "mkdir src && mv rviz_polygon_filled src"
     - name: Build workspace
-      run: "source /opt/ros/melodic/setup.bash && catkin_make_isolated"
+      run: " ls /opt/ros/melodic && ls -all && pwd && . /opt/ros/melodic/setup.sh && catkin_make_isolated"
