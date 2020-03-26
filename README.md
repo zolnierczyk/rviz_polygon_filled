@@ -10,7 +10,7 @@ Here is image which represent display of polygon by default rviz plugin:
 
 ![Default rviz plugin](img/DefaultPluginView.png "Default rviz plugin")
 
-Here is image which represent display of polygon by fill plugin plugin:
+Here is image which represent display of polygon by fill plugin:
 
 ![Fill by plugin](img/FillPluginView.png "Fill by plugin")
 
@@ -18,7 +18,7 @@ In plugin configuration you can choose to display in any combination:
 
 * Fill polygon
   * Choose color for fill
-  * Cho0se if front face on both face should be drawn
+  * Choose if front face or both face should be drawn
 * Border
   * Choose color for border
 * Triangulation mesh
@@ -26,10 +26,10 @@ In plugin configuration you can choose to display in any combination:
 
 Below you can see examples:
 
-![Fill by plugin](img/FilledFrontOnly.gif "Fill by plugin")
-![Fill by plugin](img/FilledFrontAndBack.gif "Fill by plugin")
-![Fill by plugin](img/FilledFrontAndBorder.gif "Fill by plugin")
-![Fill by plugin](img/FilledFrontAndMesh.gif "Fill by plugin")
+![Fill by plugin](img/FilledFrontOnly.gif "Fill front face only")
+![Fill by plugin](img/FilledFrontAndBack.gif "Fill both face")
+![Fill by plugin](img/FilledFrontAndBorder.gif "Fill front and border")
+![Fill by plugin](img/FilledFrontAndMesh.gif "Fill front and mesh")
 
 ## Usage
 
@@ -80,7 +80,7 @@ ROS with its rviz 3D visualization environment is very very powerful tool. In pr
 Some day we got job to visualize filled polygon. Should be easy task! And I found that ... it is not easy at all. By default rviz do not support such task. It can only display polygon as border. Ok but there should be such plugins made by _community_ which just do it. There is very nice library called [jsk_visualization](https://github.com/jsk-ros-pkg/jsk_visualization) and it has custom plugin for rviz which can display custom visualization message called PolygonArray. Sadly this plugin does not fullfil our needs:
 
 * properties of visualization like color and alpha was defined inside message not as properties in rviz
-** yep this topic is about principle who should define colors on rviz
+  * yep this topic is about principle who should define colors on rviz
 * visualization was bugged when polygon was concave
 * visualization does not handle case when polygon has holes inside
 
